@@ -8,6 +8,11 @@ from app.routers import auth as auth_router
 
 
 def test_crud_create_and_list(db_session):
+    # Clear any existing predictions for user 1
+    from app import models
+    db_session.query(models.Prediction).filter(models.Prediction.user_id == 1).delete()
+    db_session.commit()
+    
     data = schemas.PredictionCreate(
         image_url="/static/a.png",
         predicted_class="Melanoma",

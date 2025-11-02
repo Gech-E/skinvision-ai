@@ -1,16 +1,27 @@
 import React from 'react'
 import Navbar from '../components/Navbar'
-import axios from 'axios'
+import apiClient, { API, testBackendConnection } from '../utils/api'
 import { useNavigate, Link } from 'react-router-dom'
-
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
-const API = API_BASE.replace(/\/$/, '') // Remove trailing slash
 
 export default function Login() {
   const [email, setEmail] = React.useState('')
   const [password, setPassword] = React.useState('')
   const [error, setError] = React.useState('')
+  const [checkingConnection, setCheckingConnection] = React.useState(false)
   const navigate = useNavigate()
+
+  // Check backend connection on component mount
+  React.useEffect(() => {
+    async function checkConnection() {
+      setCheckingConnection(true)
+      const result = await testBackendConnection()
+      if (!result.success) {
+        setError(`⚠️ ${result.message}`)
+      }
+      setCheckingConnection(false)
+    }
+    checkConnection()
+  }, [])
 
   async function submit(e) {
     e.preventDefault()
@@ -22,14 +33,15 @@ export default function Login() {
     }
     
     try {
-      const { data } = await axios.post(`${API}/auth/login`, { email, password })
+      const { data } = await apiClient.post('/auth/login', { email, password })
       localStorage.setItem('token', data.access_token)
       navigate('/admin')
     } catch (err) {
       console.error('Login error:', err)
-      const errorMessage = err?.response?.data?.detail || err?.response?.status === 401 
-        ? 'Invalid email or password. Please try again.' 
-        : 'Login failed. Please check your connection and try again.'
+      const errorMessage = err?.response?.data?.detail || err.message || 
+        (err?.response?.status === 401 
+          ? 'Invalid email or password. Please try again.' 
+          : 'Login failed. Please check your connection and try again.')
       setError(errorMessage)
     }
   }
@@ -44,12 +56,32 @@ export default function Login() {
             <p className="text-xs sm:text-sm text-text/70 dark:text-dark-text/70 mt-1 sm:mt-2">Sign in to access admin dashboard</p>
           </div>
           
+          {checkingConnection && (
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+              <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-sm">
+                <span>🔄</span>
+                <span>Checking backend connection...</span>
+              </div>
+            </div>
+          )}
+          
           {error && (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
               <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-sm">
                 <span>⚠️</span>
                 <span>{error}</span>
               </div>
+              {error.includes('localhost:8000') && (
+                <div className="mt-2 text-xs text-red-500 dark:text-red-400">
+                  <p>💡 <strong>Solution:</strong></p>
+                  <ol className="list-decimal list-inside ml-2 mt-1 space-y-1">
+                    <li>Open a new terminal and navigate to: <code className="bg-red-100 dark:bg-red-900 px-1 rounded">backend</code></li>
+                    <li>Run: <code className="bg-red-100 dark:bg-red-900 px-1 rounded">python -m uvicorn app.main:app --reload --port 8000</code></li>
+                    <li>Wait for "Application startup complete" message</li>
+                    <li>Refresh this page and try again</li>
+                  </ol>
+                </div>
+              )}
             </div>
           )}
           

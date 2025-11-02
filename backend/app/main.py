@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from .database import Base, engine
-from .routers import auth, predict, history, notifications, otp_auth
+from .routers import auth, predict, history, notifications
 import os
 
 
@@ -26,7 +26,6 @@ app.include_router(auth.router, prefix="/auth", tags=["auth"])  # optional
 app.include_router(predict.router, tags=["predict"])            # /predict
 app.include_router(history.router, prefix="/history", tags=["history"])  # /history
 app.include_router(notifications.router, prefix="/notifications", tags=["notifications"])  # /notifications
-app.include_router(otp_auth.router, prefix="/otp", tags=["otp"])  # /otp
 
 
 @app.get("/")

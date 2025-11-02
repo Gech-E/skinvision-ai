@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.sql import func
 from .database import Base
 
@@ -13,6 +13,8 @@ class Prediction(Base):
     heatmap_url = Column(String, nullable=True)
     timestamp = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    email_sent = Column(String, nullable=True, default="false")  # Track if email was sent
+    sms_sent = Column(String, nullable=True, default="false")  # Track if SMS was sent
 
 
 class User(Base):  # optional
@@ -23,8 +25,7 @@ class User(Base):  # optional
     hashed_password = Column(String, nullable=False)
     role = Column(String, nullable=False, default="user")
     phone_number = Column(String, nullable=True)  # For SMS notifications
-    email_notifications = Column(Boolean, default=True, nullable=False)  # Email notification preference
-    sms_notifications = Column(Boolean, default=False, nullable=False)  # SMS notification preference
-    name = Column(String, nullable=True)  # User's name for personalization
+    email_notifications = Column(String, nullable=False, default="true")  # "true" or "false"
+    sms_notifications = Column(String, nullable=False, default="false")  # "true" or "false"
 
 

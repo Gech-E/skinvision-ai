@@ -65,8 +65,14 @@ def test_signup_duplicate_email_fails(client):
     assert "already registered" in response2.json()["detail"].lower()
 
 
-def test_first_user_becomes_admin(client):
+def test_first_user_becomes_admin(client, db_session):
     """Test that the first user registered becomes admin."""
+    from app import models
+    
+    # Clear all users to ensure this is truly the first
+    db_session.query(models.User).delete()
+    db_session.commit()
+    
     email = "firstadmin@example.com"
     password = "AdminPass123"
     

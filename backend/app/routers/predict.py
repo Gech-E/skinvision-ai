@@ -1,11 +1,10 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Header
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Header, BackgroundTasks
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..schemas import PredictionCreate, PredictionOut
 from ..crud import create_prediction
 from ..ml.grad_cam import save_heatmap_overlay
-from ..services.email_service import email_service
-from ..services.sms_service import sms_service
+from ..services import email_service, sms_service
 from .. import models
 try:
     import tensorflow as tf
@@ -63,8 +62,88 @@ def get_user_id_from_header(authorization: str | None = Header(default=None)) ->
         return None
 
 
+def get_user_by_id(db: Session, user_id: int | None) -> models.User | None:
+    """Get user by ID for notifications."""
+    if user_id is None:
+        return None
+    return db.query(models.User).filter(models.User.id == user_id).first()
+
+
+def send_notifications(
+    user_id: int | None,
+    predicted_class: str,
+    confidence: float,
+    prediction_id: int,
+    base_url: str = "http://localhost:3000"
+):
+    """
+    Send email and SMS notifications after prediction.
+    Runs in background to not block the API response.
+    Creates its own database session.
+    """
+    from ..database import SessionLocal
+    
+    db = SessionLocal()
+    try:
+        if user_id is None:
+            return
+        
+        user = get_user_by_id(db, user_id)
+        if not user:
+            return
+        
+        # Determine urgency level
+        urgency = "High" if confidence >= 0.8 else "Medium" if confidence >= 0.5 else "Low"
+        report_url = f"{base_url}/result"
+        
+        # Send email notification
+        if user.email_notifications.lower() == "true" and user.email:
+            email_sent = email_service.send_diagnosis_notification(
+                to_email=user.email,
+                patient_name=None,  # Can be added to user model
+                predicted_class=predicted_class,
+                confidence=confidence,
+                urgency_level=urgency,
+                report_url=report_url
+            )
+            
+            # Update prediction record
+            if email_sent:
+                pred = db.query(models.Prediction).filter(models.Prediction.id == prediction_id).first()
+                if pred:
+                    pred.email_sent = "true"
+                    db.commit()
+        
+        # Send SMS notification
+        if user.sms_notifications.lower() == "true" and user.phone_number:
+            sms_sent = sms_service.send_diagnosis_notification(
+                to_phone=user.phone_number,
+                predicted_class=predicted_class,
+                confidence=confidence,
+                urgency_level=urgency
+            )
+            
+            # Update prediction record
+            if sms_sent:
+                pred = db.query(models.Prediction).filter(models.Prediction.id == prediction_id).first()
+                if pred:
+                    pred.sms_sent = "true"
+                    db.commit()
+                    
+    except Exception as e:
+        print(f"Error sending notifications: {e}")
+        # Don't raise - notifications are optional
+    finally:
+        db.close()
+
+
 @router.post("/predict", response_model=PredictionOut)
-async def predict(file: UploadFile = File(...), db: Session = Depends(get_db), user_id: int | None = Depends(get_user_id_from_header)):
+async def predict(
+    file: UploadFile = File(...), 
+    db: Session = Depends(get_db), 
+    user_id: int | None = Depends(get_user_id_from_header),
+    background_tasks: BackgroundTasks = BackgroundTasks()
+):
     contents = await file.read()
     if not contents:
         raise HTTPException(status_code=400, detail="Empty file")
@@ -105,35 +184,16 @@ async def predict(file: UploadFile = File(...), db: Session = Depends(get_db), u
     )
     pred = create_prediction(db, data, user_id=user_id)
     
-    # Send notifications if user is authenticated
-    if user_id:
-        try:
-            user = db.query(models.User).filter(models.User.id == user_id).first()
-            if user:
-                prediction_data = {
-                    'predicted_class': predicted,
-                    'confidence': conf,
-                    'id': pred.id
-                }
-                
-                # Send email notification
-                if user.email_notifications and user.email:
-                    email_service.send_notification(
-                        to_email=user.email,
-                        prediction_data=prediction_data,
-                        user_name=user.name
-                    )
-                
-                # Send SMS notification
-                if user.sms_notifications and user.phone_number:
-                    sms_service.send_diagnosis_notification(
-                        to_phone=user.phone_number,
-                        prediction_data=prediction_data,
-                        user_name=user.name
-                    )
-        except Exception as e:
-            # Don't fail the prediction if notification fails
-            print(f"Notification error (non-critical): {e}")
+    # Send notifications in background (non-blocking)
+    base_url = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+    background_tasks.add_task(
+        send_notifications,
+        user_id=user_id,
+        predicted_class=predicted,
+        confidence=conf,
+        prediction_id=pred.id,
+        base_url=base_url
+    )
     
     return pred
 

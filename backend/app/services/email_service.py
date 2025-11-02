@@ -1,223 +1,222 @@
 """
 Email Notification Service
-Supports multiple email providers: SMTP, SendGrid, and Twilio SendGrid
+Handles sending email notifications for diagnosis completion.
 """
 
 import os
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from typing import Optional, Dict
+from typing import Optional
 from jinja2 import Template
 
 
 class EmailService:
-    """Professional email notification service."""
+    """Service for sending email notifications."""
     
     def __init__(self):
-        self.smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
-        self.smtp_port = int(os.getenv("SMTP_PORT", "587"))
-        self.smtp_user = os.getenv("SMTP_USER", "")
-        self.smtp_password = os.getenv("SMTP_PASSWORD", "")
-        self.from_email = os.getenv("FROM_EMAIL", self.smtp_user)
-        self.from_name = os.getenv("FROM_NAME", "SkinVision AI")
+        # SMTP Configuration from environment variables
+        self.smtp_host = os.environ.get("SMTP_HOST", "smtp.gmail.com")
+        self.smtp_port = int(os.environ.get("SMTP_PORT", "587"))
+        self.smtp_user = os.environ.get("SMTP_USER", "")
+        self.smtp_password = os.environ.get("SMTP_PASSWORD", "")
+        self.from_email = os.environ.get("FROM_EMAIL", self.smtp_user)
+        self.enabled = os.environ.get("EMAIL_NOTIFICATIONS_ENABLED", "false").lower() == "true"
         
-        # SendGrid settings (alternative to SMTP)
-        self.sendgrid_api_key = os.getenv("SENDGRID_API_KEY", "")
-        self.use_sendgrid = bool(self.sendgrid_api_key)
+    def _get_connection(self):
+        """Create SMTP connection."""
+        if not self.enabled or not self.smtp_user:
+            return None
+        
+        server = smtplib.SMTP(self.smtp_host, self.smtp_port)
+        server.starttls()
+        server.login(self.smtp_user, self.smtp_password)
+        return server
     
-    def send_email_smtp(self, to_email: str, subject: str, html_content: str, text_content: str = "") -> bool:
-        """Send email using SMTP."""
-        try:
-            msg = MIMEMultipart('alternative')
-            msg['Subject'] = subject
-            msg['From'] = f"{self.from_name} <{self.from_email}>"
-            msg['To'] = to_email
-            
-            # Add text and HTML parts
-            if text_content:
-                part1 = MIMEText(text_content, 'plain')
-                msg.attach(part1)
-            
-            part2 = MIMEText(html_content, 'html')
-            msg.attach(part2)
-            
-            # Send email
-            with smtplib.SMTP(self.smtp_host, self.smtp_port) as server:
-                server.starttls()
-                server.login(self.smtp_user, self.smtp_password)
-                server.send_message(msg)
-            
-            return True
-        except Exception as e:
-            print(f"SMTP email error: {e}")
-            return False
-    
-    def send_email_sendgrid(self, to_email: str, subject: str, html_content: str, text_content: str = "") -> bool:
-        """Send email using SendGrid API."""
-        try:
-            from sendgrid import SendGridAPIClient
-            from sendgrid.helpers.mail import Mail
-            
-            message = Mail(
-                from_email=(self.from_email, self.from_name),
-                to_emails=to_email,
-                subject=subject,
-                html_content=html_content,
-                plain_text_content=text_content
-            )
-            
-            sg = SendGridAPIClient(self.sendgrid_api_key)
-            response = sg.send(message)
-            
-            return response.status_code in [200, 201, 202]
-        except ImportError:
-            print("SendGrid not installed. Install with: pip install sendgrid")
-            return False
-        except Exception as e:
-            print(f"SendGrid email error: {e}")
-            return False
-    
-    def send_notification(self, to_email: str, prediction_data: Dict, user_name: Optional[str] = None) -> bool:
+    def send_diagnosis_notification(
+        self,
+        to_email: str,
+        patient_name: Optional[str] = None,
+        predicted_class: str = "Unknown",
+        confidence: float = 0.0,
+        urgency_level: str = "Low",
+        report_url: Optional[str] = None
+    ) -> bool:
         """
         Send diagnosis completion notification email.
         
         Args:
             to_email: Recipient email address
-            prediction_data: Dictionary with prediction details
-            user_name: Optional user name for personalization
+            patient_name: Patient name (optional)
+            predicted_class: Predicted disease class
+            confidence: Confidence score (0-1)
+            urgency_level: Urgency level (High/Medium/Low)
+            report_url: URL to download report (optional)
+        
+        Returns:
+            True if sent successfully, False otherwise
         """
+        if not self.enabled:
+            print("Email notifications are disabled")
+            return False
+        
         if not to_email:
+            print("No email address provided")
             return False
         
-        # Generate email content
-        subject = f"Your Skin Analysis Results - {prediction_data.get('predicted_class', 'Diagnosis Complete')}"
-        html_content = self._generate_email_template(prediction_data, user_name)
-        text_content = self._generate_text_email(prediction_data, user_name)
-        
-        # Choose email service
-        if self.use_sendgrid:
-            return self.send_email_sendgrid(to_email, subject, html_content, text_content)
-        elif self.smtp_user and self.smtp_password:
-            return self.send_email_smtp(to_email, subject, html_content, text_content)
-        else:
-            print("Email service not configured. Set SMTP_USER/SMTP_PASSWORD or SENDGRID_API_KEY")
-            return False
-    
-    def _generate_email_template(self, prediction_data: Dict, user_name: Optional[str] = None) -> str:
-        """Generate HTML email template."""
-        disease = prediction_data.get('predicted_class', 'Unknown')
-        confidence = prediction_data.get('confidence', 0.0)
-        confidence_pct = int(confidence * 100)
-        
-        # Determine urgency
-        if confidence >= 0.8:
-            urgency = "High"
-            urgency_color = "#EF4444"
-            advice = "Consult a dermatologist within 3-7 days. This requires immediate medical attention."
-        elif confidence >= 0.5:
-            urgency = "Medium"
-            urgency_color = "#F59E0B"
-            advice = "Book an appointment within 2-4 weeks for professional evaluation."
-        else:
-            urgency = "Low"
-            urgency_color = "#10B981"
-            advice = "Monitor the area and consider rechecking in 8-12 weeks if changes occur."
-        
-        greeting = f"Hello {user_name}," if user_name else "Hello,"
-        
-        html = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <style>
-                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #17252A; }}
-                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-                .header {{ background: linear-gradient(135deg, #2B7A78, #3AAFA9); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
-                .content {{ background: white; padding: 30px; border: 1px solid #DEF2F1; }}
-                .result-box {{ background: #DEF2F1; padding: 20px; border-radius: 10px; margin: 20px 0; }}
-                .confidence-bar {{ background: #DEF2F1; height: 30px; border-radius: 15px; overflow: hidden; margin: 10px 0; }}
-                .confidence-fill {{ background: linear-gradient(90deg, #2B7A78, #3AAFA9); height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }}
-                .urgency-badge {{ display: inline-block; padding: 8px 16px; border-radius: 20px; color: white; font-weight: bold; background: {urgency_color}; }}
-                .footer {{ background: #17252A; color: white; padding: 20px; text-align: center; border-radius: 0 0 10px 10px; font-size: 12px; }}
-                .button {{ display: inline-block; background: #2B7A78; color: white; padding: 12px 24px; text-decoration: none; border-radius: 25px; margin: 20px 0; }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1>🧬 SkinVision AI</h1>
-                    <p>Your Analysis Results</p>
-                </div>
-                <div class="content">
-                    <p>{greeting}</p>
-                    <p>Your skin image analysis has been completed. Here are your results:</p>
-                    
-                    <div class="result-box">
-                        <h2 style="color: #2B7A78; margin-top: 0;">Predicted Condition</h2>
-                        <h3 style="font-size: 24px; margin: 10px 0;">{disease}</h3>
+        try:
+            # Create message
+            msg = MIMEMultipart('alternative')
+            msg['Subject'] = f"Your SkinVision AI Diagnosis Results - {predicted_class}"
+            msg['From'] = self.from_email
+            msg['To'] = to_email
+            
+            # Email template
+            html_template = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #17252A; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .header { background: linear-gradient(135deg, #2B7A78, #3AAFA9); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+                    .content { background: #ffffff; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                    .result-box { background: #DEF2F1; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2B7A78; }
+                    .confidence-bar { background: #e0e0e0; height: 25px; border-radius: 12px; overflow: hidden; margin: 10px 0; }
+                    .confidence-fill { background: linear-gradient(90deg, #2B7A78, #3AAFA9); height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
+                    .urgency-high { color: #EF4444; font-weight: bold; }
+                    .urgency-medium { color: #F59E0B; font-weight: bold; }
+                    .urgency-low { color: #10B981; font-weight: bold; }
+                    .button { display: inline-block; padding: 12px 24px; background: #2B7A78; color: white; text-decoration: none; border-radius: 6px; margin: 10px 0; }
+                    .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
+                    .disclaimer { background: #fff3cd; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #ffc107; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>🧬 SkinVision AI</h1>
+                        <p>Your Diagnosis Results</p>
+                    </div>
+                    <div class="content">
+                        <p>Hello{% if patient_name %} {{ patient_name }}{% endif %},</p>
+                        <p>Your skin image analysis has been completed. Here are your results:</p>
                         
-                        <div>
-                            <strong>Confidence: {confidence_pct}%</strong>
+                        <div class="result-box">
+                            <h3 style="margin-top: 0;">Diagnosis Result</h3>
+                            <p style="font-size: 24px; font-weight: bold; color: #2B7A78; margin: 10px 0;">
+                                {{ predicted_class }}
+                            </p>
+                            <p><strong>Confidence Score:</strong> {{ confidence_percent }}%</p>
                             <div class="confidence-bar">
-                                <div class="confidence-fill" style="width: {confidence_pct}%;">{confidence_pct}%</div>
+                                <div class="confidence-fill" style="width: {{ confidence_percent }}%;">
+                                    {{ confidence_percent }}%
+                                </div>
                             </div>
+                            <p><strong>Urgency Level:</strong> 
+                                <span class="urgency-{{ urgency_level.lower() }}">{{ urgency_level }}</span>
+                            </p>
                         </div>
                         
-                        <div style="margin-top: 20px;">
-                            <strong>Urgency Level:</strong><br>
-                            <span class="urgency-badge">{urgency}</span>
+                        {% if urgency_level == "High" %}
+                        <div class="disclaimer">
+                            <strong>⚠️ Important:</strong> Based on the analysis, we recommend consulting a dermatologist within 3–7 days. This requires professional medical attention.
                         </div>
+                        {% elif urgency_level == "Medium" %}
+                        <div class="disclaimer">
+                            <strong>📋 Recommendation:</strong> Please book an appointment with a dermatologist within 2–4 weeks for professional evaluation.
+                        </div>
+                        {% else %}
+                        <div class="disclaimer">
+                            <strong>✅ Advice:</strong> Monitor the area and consider rechecking in 8–12 weeks if any changes occur.
+                        </div>
+                        {% endif %}
                         
-                        <div style="margin-top: 20px; padding: 15px; background: white; border-left: 4px solid {urgency_color};">
-                            <strong>Recommendation:</strong><br>
-                            {advice}
+                        {% if report_url %}
+                        <p style="text-align: center;">
+                            <a href="{{ report_url }}" class="button">📄 Download Full Report</a>
+                        </p>
+                        {% endif %}
+                        
+                        <p>You can view your complete analysis results and heatmap visualization by logging into your SkinVision AI account.</p>
+                        
+                        <div class="footer">
+                            <p><strong>⚠️ Medical Disclaimer:</strong></p>
+                            <p>This analysis is for informational purposes only and does not replace professional medical advice, diagnosis, or treatment. Always consult qualified healthcare providers.</p>
+                            <p style="margin-top: 20px;">
+                                © SkinVision AI - Powered by Deep Learning Technology
+                            </p>
                         </div>
                     </div>
-                    
-                    <p><strong>Important:</strong> This analysis is for informational purposes only and does not replace professional medical advice. Please consult with a qualified dermatologist for diagnosis and treatment.</p>
-                    
-                    <div style="text-align: center;">
-                        <a href="http://localhost:3000/result" class="button">View Full Report</a>
-                    </div>
                 </div>
-                <div class="footer">
-                    <p><strong>SkinVision AI</strong> - Powered by Deep Learning Technology</p>
-                    <p>This is an automated notification. Please do not reply to this email.</p>
-                </div>
-            </div>
-        </body>
-        </html>
-        """
-        return html
-    
-    def _generate_text_email(self, prediction_data: Dict, user_name: Optional[str] = None) -> str:
-        """Generate plain text email version."""
-        disease = prediction_data.get('predicted_class', 'Unknown')
-        confidence = prediction_data.get('confidence', 0.0)
-        confidence_pct = int(confidence * 100)
-        
-        text = f"""
-SkinVision AI - Your Analysis Results
+            </body>
+            </html>
+            """
+            
+            text_template = """
+            SkinVision AI - Diagnosis Results
+            
+            Hello{% if patient_name %} {{ patient_name }}{% endif %},
+            
+            Your skin image analysis has been completed.
+            
+            Diagnosis Result: {{ predicted_class }}
+            Confidence Score: {{ confidence_percent }}%
+            Urgency Level: {{ urgency_level }}
+            
+            {% if urgency_level == "High" %}
+            IMPORTANT: Please consult a dermatologist within 3-7 days.
+            {% elif urgency_level == "Medium" %}
+            Recommendation: Book an appointment within 2-4 weeks.
+            {% else %}
+            Advice: Monitor the area and recheck in 8-12 weeks if changes occur.
+            {% endif %}
+            
+            {% if report_url %}
+            Download full report: {{ report_url }}
+            {% endif %}
+            
+            DISCLAIMER: This analysis is for informational purposes only and does not replace professional medical advice.
+            
+            © SkinVision AI
+            """
+            
+            # Render templates
+            html_body = Template(html_template).render(
+                patient_name=patient_name or "",
+                predicted_class=predicted_class,
+                confidence_percent=round(confidence * 100, 1),
+                urgency_level=urgency_level,
+                report_url=report_url or ""
+            )
+            
+            text_body = Template(text_template).render(
+                patient_name=patient_name or "",
+                predicted_class=predicted_class,
+                confidence_percent=round(confidence * 100, 1),
+                urgency_level=urgency_level,
+                report_url=report_url or ""
+            )
+            
+            # Attach parts
+            msg.attach(MIMEText(text_body, 'plain'))
+            msg.attach(MIMEText(html_body, 'html'))
+            
+            # Send email
+            server = self._get_connection()
+            if server:
+                server.send_message(msg)
+                server.quit()
+                print(f"Email notification sent to {to_email}")
+                return True
+            else:
+                print("Email service not configured or disabled")
+                return False
+                
+        except Exception as e:
+            print(f"Failed to send email notification: {e}")
+            return False
 
-{greeting if user_name else 'Hello'},
 
-Your skin image analysis has been completed.
-
-Predicted Condition: {disease}
-Confidence: {confidence_pct}%
-
-Important: This analysis is for informational purposes only and does not replace professional medical advice. Please consult with a qualified dermatologist.
-
-View full report: http://localhost:3000/result
-
----
-SkinVision AI - Powered by Deep Learning Technology
-        """
-        return text.strip()
-
-
-# Singleton instance
+# Global instance
 email_service = EmailService()

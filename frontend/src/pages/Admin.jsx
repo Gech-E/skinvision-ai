@@ -1,7 +1,6 @@
 import React from 'react'
 import Navbar from '../components/Navbar'
 import HistoryTable from '../components/HistoryTable'
-import OTPModal from '../components/OTPModal'
 import axios from 'axios'
 
 const API = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
@@ -103,72 +102,28 @@ function LineChart({ data, title }) {
 export default function Admin() {
   const [rows, setRows] = React.useState([])
   const [loading, setLoading] = React.useState(true)
-  const [showOTPModal, setShowOTPModal] = React.useState(false)
-  const [userEmail, setUserEmail] = React.useState('')
-  const [otpSessionToken, setOtpSessionToken] = React.useState(null)
 
-  async function load(requireOTP = false) {
+  async function load() {
     try {
       const token = localStorage.getItem('token')
-      const otpSession = localStorage.getItem('otp_session')
-      
       if (!token) {
         alert('Please login to access admin dashboard')
         window.location.href = '/login'
         return
       }
-
-      // Use OTP session token if available, otherwise regular token
-      const authToken = otpSession || token
-      const headers = { Authorization: `Bearer ${authToken}` }
-      
-      // If OTP is required but we don't have a session, show modal
-      if (requireOTP && !otpSession) {
-        // Fetch user email first
-        try {
-          const userResponse = await axios.get(`${API}/notifications/settings`, { headers: { Authorization: `Bearer ${token}` } })
-          setUserEmail(userResponse.data.email)
-          setShowOTPModal(true)
-          return
-        } catch (e) {
-          console.error('Failed to get user info:', e)
-        }
-      }
-
-      const { data } = await axios.get(`${API}/history/?all=true${requireOTP ? '&require_otp=true' : ''}`, { 
-        headers 
+      const { data } = await axios.get(`${API}/history/?all=true`, { 
+        headers: { Authorization: `Bearer ${token}` } 
       })
       setRows(data)
     } catch (error) {
       console.error('Failed to load history:', error)
-      if (error.response?.status === 401 || error.response?.status === 403) {
-        if (error.response?.status === 403 && error.response?.data?.detail?.includes('OTP')) {
-          // OTP required
-          const token = localStorage.getItem('token')
-          try {
-            const userResponse = await axios.get(`${API}/notifications/settings`, { headers: { Authorization: `Bearer ${token}` } })
-            setUserEmail(userResponse.data.email)
-            setShowOTPModal(true)
-            return
-          } catch (e) {
-            console.error('Failed to get user info:', e)
-          }
-        } else {
-          localStorage.removeItem('token')
-          localStorage.removeItem('otp_session')
-          window.location.href = '/login'
-        }
+      if (error.response?.status === 401) {
+        localStorage.removeItem('token')
+        window.location.href = '/login'
       }
     } finally {
       setLoading(false)
     }
-  }
-
-  function handleOTPVerify(sessionToken) {
-    setOtpSessionToken(sessionToken)
-    localStorage.setItem('otp_session', sessionToken)
-    // Reload with OTP session
-    load(true)
   }
 
   async function remove(id) {
@@ -181,10 +136,7 @@ export default function Admin() {
     }
   }
 
-  React.useEffect(() => { 
-    // Try to load without OTP first, but will prompt if required
-    load(false) 
-  }, [])
+  React.useEffect(() => { load() }, [])
 
   // Calculate chart data
   const diseaseCount = rows.reduce((acc, row) => {
@@ -214,35 +166,19 @@ export default function Admin() {
     )
   }
 
-      return (
-        <div className="min-h-screen bg-accent dark:bg-dark-bg">
-          <Navbar />
-          <OTPModal
-            isOpen={showOTPModal}
-            onClose={() => setShowOTPModal(false)}
-            onVerify={handleOTPVerify}
-            identifier={userEmail}
-            method="email"
-          />
-          <main className="max-w-7xl mx-auto px-6 py-10 space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-3xl font-bold text-text dark:text-dark-text">Admin Dashboard</h2>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => load(true)}
-                  className="rounded-2xl bg-secondary text-white px-4 py-2 shadow-card hover:shadow-glow transition-all text-sm font-medium"
-                  title="Reload with OTP verification"
-                >
-                  🔐 Secure Reload
-                </button>
-                <button
-                  onClick={() => load(false)}
-                  className="rounded-2xl bg-primary text-white px-4 py-2 shadow-card hover:shadow-glow transition-all text-sm font-medium"
-                >
-                  🔄 Refresh
-                </button>
-              </div>
-            </div>
+  return (
+    <div className="min-h-screen bg-accent dark:bg-dark-bg">
+      <Navbar />
+      <main className="max-w-7xl mx-auto px-6 py-10 space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-3xl font-bold text-text dark:text-dark-text">Admin Dashboard</h2>
+          <button
+            onClick={load}
+            className="rounded-2xl bg-primary text-white px-4 py-2 shadow-card hover:shadow-glow transition-all text-sm font-medium"
+          >
+            🔄 Refresh
+          </button>
+        </div>
 
         {/* Stats Cards */}
         <div className="grid md:grid-cols-4 gap-4">

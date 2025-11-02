@@ -24,11 +24,12 @@ def verify_password(password: str, hashed: str) -> bool:
 
 
 def create_access_token(sub: str, role: str, expires_minutes: int = 60) -> str:
+    now = dt.datetime.now(dt.timezone.utc)
     payload = {
         "sub": sub,
         "role": role,
-        "exp": dt.datetime.utcnow() + dt.timedelta(minutes=expires_minutes),
-        "iat": dt.datetime.utcnow(),
+        "exp": now + dt.timedelta(minutes=expires_minutes),
+        "iat": now,
     }
     return jwt.encode(payload, SECRET, algorithm=ALGO)
 
@@ -48,11 +49,14 @@ def signup(body: UserCreate, db: Session = Depends(get_db)):
         # Hash password
         hashed_password = get_password_hash(body.password)
         
-        # Create user
+        # Create user with default notification preferences
         user = models.User(
             email=body.email, 
             hashed_password=hashed_password, 
-            role=role
+            role=role,
+            phone_number=getattr(body, 'phone_number', None),  # Optional phone number
+            email_notifications="true",  # Enable email by default
+            sms_notifications="false"   # Disable SMS by default
         )
         db.add(user)
         db.commit()
