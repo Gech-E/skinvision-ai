@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Backend Connection Test</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        button { padding: 10px 20px; margin: 5px; }
+        .success { color: green; }
+        .error { color: red; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Backend Connection Test</h1>
+    <button onclick="testConnection()">Test Backend Connection</button>
+    <button onclick="testSignup()">Test Signup Endpoint</button>
+    <div id="result"></div>
+
+    <script>
+        const API = 'http://localhost:8000';
+        
+        async function testConnection() {
+            const result = document.getElementById('result');
+            result.innerHTML = '<p>Testing connection...</p>';
+            
+            try {
+                const response = await fetch(`${API}/`);
+                const data = await response.json();
+                result.innerHTML = `<p class="success">✓ Backend is running!</p><pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                result.innerHTML = `<p class="error">✗ Cannot connect to backend</p><p>Error: ${error.message}</p><p>Make sure backend is running on ${API}</p>`;
+            }
+        }
+        
+        async function testSignup() {
+            const result = document.getElementById('result');
+            result.innerHTML = '<p>Testing signup...</p>';
+            
+            try {
+                const response = await fetch(`${API}/auth/signup`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: `test${Date.now()}@example.com`,
+                        password: 'test123456'
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    result.innerHTML = `<p class="success">✓ Signup successful!</p><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                } else {
+                    const error = await response.json();
+                    result.innerHTML = `<p class="error">✗ Signup failed</p><pre>${JSON.stringify(error, null, 2)}</pre>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<p class="error">✗ Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

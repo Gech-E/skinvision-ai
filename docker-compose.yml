@@ -1,0 +1,40 @@
+version: '3.9'
+services:
+  backend:
+    build: ./backend
+    container_name: skinvision-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+psycopg2://postgres:postgres@db:5432/skinvision
+      - MODEL_PATH=/app/app/ml/model.h5
+      - STATIC_DIR=/app/app/static
+      - JWT_SECRET=devsecret
+    depends_on:
+      - db
+    volumes:
+      - ./backend/app/static:/app/app/static
+  frontend:
+    build: ./frontend
+    container_name: skinvision-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_BASE=http://localhost:8000
+    depends_on:
+      - backend
+  db:
+    image: postgres:15-alpine
+    container_name: skinvision-db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=skinvision
+    volumes:
+      - db_data:/var/lib/postgresql/data
+volumes:
+  db_data:
+
+
