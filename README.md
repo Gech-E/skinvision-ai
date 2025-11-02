@@ -24,12 +24,14 @@
 5. [Step-by-Step Local Installation](#-step-by-step-local-installation)
 6. [Running the Application](#-running-the-application)
 7. [Using the Application](#-using-the-application)
-8. [Training Your Own Model](#-training-your-own-model)
-9. [API Documentation](#-api-documentation)
-10. [Testing](#-testing)
-11. [Deployment](#-deployment)
-12. [Troubleshooting](#-troubleshooting)
-13. [Project Structure](#-project-structure)
+8. [Email & SMS Notifications](#-email--sms-notifications)
+9. [OTP Authentication](#-otp-authentication)
+10. [Training Your Own Model](#-training-your-own-model)
+11. [API Documentation](#-api-documentation)
+12. [Testing](#-testing)
+13. [Deployment](#-deployment)
+14. [Troubleshooting](#-troubleshooting)
+15. [Project Structure](#-project-structure)
 
 ---
 
@@ -42,6 +44,8 @@
 - **Professional UI**: Clean, modern healthcare interface
 - **Admin Dashboard**: Track predictions and view analytics
 - **Secure & Private**: JWT authentication and encrypted data
+- **Email & SMS Notifications**: Automatic notifications when diagnosis is complete
+- **OTP Authentication**: Two-factor authentication for accessing prediction history
 
 ### Use Cases
 - Medical research and education
@@ -356,6 +360,95 @@ To access the admin dashboard:
    - **Analytics Charts**:
      - Disease distribution (bar chart)
      - Weekly trends (line chart)
+
+---
+
+## 📧 Email & SMS Notifications
+
+SkinVision AI automatically sends notifications when a diagnosis is complete.
+
+### Email Notifications
+
+**Configuration (SMTP):**
+```bash
+export SMTP_HOST=smtp.gmail.com
+export SMTP_PORT=587
+export SMTP_USER=your-email@gmail.com
+export SMTP_PASSWORD=your-app-password
+export FROM_EMAIL=your-email@gmail.com
+```
+
+**Configuration (SendGrid):**
+```bash
+export SENDGRID_API_KEY=your-api-key
+export FROM_EMAIL=noreply@yourdomain.com
+```
+
+### SMS Notifications (Optional)
+
+**Configuration (Twilio):**
+```bash
+export TWILIO_ACCOUNT_SID=your-account-sid
+export TWILIO_AUTH_TOKEN=your-auth-token
+export TWILIO_PHONE_NUMBER=+1234567890
+```
+
+### User Preferences
+
+Users can configure notification preferences via the API:
+- Enable/disable email notifications
+- Enable/disable SMS notifications
+- Add phone number for SMS
+
+**API Endpoint:**
+```
+PUT /notifications/settings
+```
+
+See **[NOTIFICATIONS.md](NOTIFICATIONS.md)** for detailed documentation.
+
+---
+
+## 🔐 OTP Authentication
+
+For enhanced security when accessing prediction history, users can enable OTP (One-Time Password) verification.
+
+### How It Works
+
+1. **Request OTP**: User clicks "Secure Reload" or accesses history
+2. **Receive Code**: OTP sent via email or SMS (6-digit code, valid 10 minutes)
+3. **Verify Code**: Enter OTP in the modal
+4. **Get Session**: Receive session token (valid 30 minutes)
+5. **Access History**: Use session token to view prediction history
+
+### API Endpoints
+
+**Request OTP:**
+```
+POST /otp/request
+Body: {"email": "user@example.com"}
+```
+
+**Verify OTP:**
+```
+POST /otp/verify
+Body: {"email": "user@example.com", "otp": "123456"}
+```
+
+**Access History with OTP:**
+```
+GET /history/?require_otp=true
+Headers: Authorization: Bearer <otp_session_token>
+```
+
+### Security Features
+
+- ✅ OTPs expire after 10 minutes
+- ✅ One-time use only
+- ✅ Maximum 5 verification attempts
+- ✅ Session tokens expire after 30 minutes
+
+See **[NOTIFICATIONS.md](NOTIFICATIONS.md)** for complete documentation.
 
 ---
 
