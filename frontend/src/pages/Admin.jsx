@@ -176,7 +176,7 @@ export default function Admin() {
             onClick={load}
             className="rounded-2xl bg-primary text-white px-4 py-2 shadow-card hover:shadow-glow transition-all text-sm font-medium"
           >
-            🔄 Refresh
+             Refresh
           </button>
         </div>
 

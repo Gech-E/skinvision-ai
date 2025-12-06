@@ -75,7 +75,7 @@ export default function Result() {
             
             <div className="bg-white dark:bg-dark-card rounded-2xl shadow-card border border-accent dark:border-dark-border p-5">
               <div className="flex items-center gap-2 mb-4">
-                <span className="text-lg">🔥</span>
+                <span className="text-lg"></span>
                 <h3 className="text-lg font-semibold text-text dark:text-dark-text">Grad-CAM Heatmap Visualization</h3>
               </div>
               <HeatmapSlider imageUrl={imageUrl} heatmapUrl={heatmapImageUrl} />
@@ -97,7 +97,7 @@ export default function Result() {
           <div className="space-y-6">
             <div className="bg-white dark:bg-dark-card rounded-2xl shadow-card border border-accent dark:border-dark-border p-5">
               <div className="flex items-center gap-2 mb-4">
-                <span className="text-lg">📋</span>
+                <span className="text-lg"></span>
                 <h3 className="text-lg font-semibold text-text dark:text-dark-text">Recommendation</h3>
               </div>
               <div className="space-y-3">
@@ -125,14 +125,14 @@ export default function Result() {
                   onClick={handleDownloadPDF}
                   className="rounded-2xl bg-primary text-white px-4 py-3 shadow-card hover:shadow-glow-hover transition-all font-medium flex items-center justify-center gap-2"
                 >
-                  <span>📄</span>
+                  <span></span>
                   <span>Download Report (PDF)</span>
                 </button>
                 <button 
                   onClick={handleRequestReview}
                   className="rounded-2xl bg-white dark:bg-dark-card text-text dark:text-dark-text px-4 py-3 border border-secondary dark:border-dark-border hover:shadow-card transition-all font-medium flex items-center justify-center gap-2"
                 >
-                  <span>👨‍⚕️</span>
+                  <span></span>
                   <span>Request Dermatologist Review</span>
                 </button>
               </div>

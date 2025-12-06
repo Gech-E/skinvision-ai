@@ -25,7 +25,7 @@ export default function UploadCard({ onFiles, previewUrl }) {
         ].join(' ')}
       >
         <div className="text-center px-6">
-          <div className="text-3xl mb-2">🧬</div>
+          <div className="text-3xl mb-2"></div>
           <p className="text-text font-medium">Drag & Drop your image</p>
           <p className="text-sm text-text/70">or click to choose a file</p>
         </div>

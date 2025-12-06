@@ -16,7 +16,7 @@ export default function Login() {
       setCheckingConnection(true)
       const result = await testBackendConnection()
       if (!result.success) {
-        setError(`⚠️ ${result.message}`)
+        setError(` ${result.message}`)
       }
       setCheckingConnection(false)
     }
@@ -59,7 +59,7 @@ export default function Login() {
           {checkingConnection && (
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
               <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-sm">
-                <span>🔄</span>
+                <span></span>
                 <span>Checking backend connection...</span>
               </div>
             </div>
@@ -68,12 +68,12 @@ export default function Login() {
           {error && (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
               <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-sm">
-                <span>⚠️</span>
+                <span></span>
                 <span>{error}</span>
               </div>
               {error.includes('localhost:8000') && (
                 <div className="mt-2 text-xs text-red-500 dark:text-red-400">
-                  <p>💡 <strong>Solution:</strong></p>
+                  <p> <strong>Solution:</strong></p>
                   <ol className="list-decimal list-inside ml-2 mt-1 space-y-1">
                     <li>Open a new terminal and navigate to: <code className="bg-red-100 dark:bg-red-900 px-1 rounded">backend</code></li>
                     <li>Run: <code className="bg-red-100 dark:bg-red-900 px-1 rounded">python -m uvicorn app.main:app --reload --port 8000</code></li>

@@ -100,7 +100,7 @@ export default function Upload() {
                 </>
               ) : (
                 <>
-                  <span>🔍</span>
+                  <span></span>
                   <span>Analyze Image</span>
                 </>
               )}

@@ -73,7 +73,7 @@ export default function Signup() {
           {error && (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
               <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-sm">
-                <span>⚠️</span>
+                <span></span>
                 <span>{error}</span>
               </div>
             </div>
@@ -82,7 +82,7 @@ export default function Signup() {
           {success && (
             <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
               <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm">
-                <span>✅</span>
+                <span></span>
                 <span>{success}</span>
               </div>
             </div>

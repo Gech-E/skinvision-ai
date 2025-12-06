@@ -10,7 +10,7 @@ export default function Home() {
       {/* Hero Section */}
       <main className="max-w-7xl mx-auto px-6 py-16 md:py-24">
         <section className="text-center mb-20">
-          <div className="text-6xl mb-6 animate-pulse">🧬✨</div>
+          <div className="text-6xl mb-6 animate-pulse"></div>
           <h1 className="text-4xl md:text-6xl font-extrabold text-text dark:text-dark-text leading-tight mb-6">
             AI-Powered Skin Disease Detection
           </h1>
@@ -23,7 +23,7 @@ export default function Home() {
               to="/upload" 
               className="rounded-2xl bg-primary text-white px-8 py-4 shadow-card hover:shadow-glow-hover transition-all font-semibold text-lg flex items-center gap-2 group"
             >
-              <span>📤</span>
+              <span></span>
               <span>Upload Your Image for Analysis</span>
               <span className="group-hover:translate-x-1 transition-transform">→</span>
             </Link>
@@ -37,7 +37,7 @@ export default function Home() {
           
           <div className="flex flex-wrap justify-center gap-6 mt-12 text-sm text-text/70 dark:text-dark-text/70">
             <div className="flex items-center gap-2">
-              <span className="text-xl">🔒</span>
+              <span className="text-xl"></span>
               <span>100% Private</span>
             </div>
             <div className="flex items-center gap-2">
@@ -62,7 +62,7 @@ export default function Home() {
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="bg-white dark:bg-dark-card rounded-2xl shadow-card border border-accent dark:border-dark-border p-6 hover:shadow-glow transition-all">
-              <div className="text-4xl mb-4">🧠</div>
+              <div className="text-4xl mb-4"></div>
               <h3 className="text-xl font-semibold text-text dark:text-dark-text mb-2">AI-Powered Diagnosis</h3>
               <p className="text-sm text-text/70 dark:text-dark-text/70">
                 Advanced deep learning algorithms trained on thousands of dermatological images provide instant, accurate analysis.
@@ -70,7 +70,7 @@ export default function Home() {
             </div>
             
             <div className="bg-white dark:bg-dark-card rounded-2xl shadow-card border border-accent dark:border-dark-border p-6 hover:shadow-glow transition-all">
-              <div className="text-4xl mb-4">👨‍⚕️</div>
+              <div className="text-4xl mb-4"></div>
               <h3 className="text-xl font-semibold text-text dark:text-dark-text mb-2">Dermatologist-Assisted Insights</h3>
               <p className="text-sm text-text/70 dark:text-dark-text/70">
                 Get professional medical explanations and recommendations reviewed by certified dermatologists.
@@ -78,7 +78,7 @@ export default function Home() {
             </div>
             
             <div className="bg-white dark:bg-dark-card rounded-2xl shadow-card border border-accent dark:border-dark-border p-6 hover:shadow-glow transition-all">
-              <div className="text-4xl mb-4">🔥</div>
+              <div className="text-4xl mb-4"></div>
               <h3 className="text-xl font-semibold text-text dark:text-dark-text mb-2">Visual Explanations</h3>
               <p className="text-sm text-text/70 dark:text-dark-text/70">
                 Grad-CAM heatmaps show exactly what the AI sees, making the analysis transparent and understandable.
@@ -86,7 +86,7 @@ export default function Home() {
             </div>
             
             <div className="bg-white dark:bg-dark-card rounded-2xl shadow-card border border-accent dark:border-dark-border p-6 hover:shadow-glow transition-all">
-              <div className="text-4xl mb-4">📄</div>
+              <div className="text-4xl mb-4"></div>
               <h3 className="text-xl font-semibold text-text dark:text-dark-text mb-2">Downloadable Reports</h3>
               <p className="text-sm text-text/70 dark:text-dark-text/70">
                 Export detailed PDF reports to share with your healthcare provider.
@@ -102,7 +102,7 @@ export default function Home() {
             </div>
             
             <div className="bg-white dark:bg-dark-card rounded-2xl shadow-card border border-accent dark:border-dark-border p-6 hover:shadow-glow transition-all">
-              <div className="text-4xl mb-4">🔐</div>
+              <div className="text-4xl mb-4"></div>
               <h3 className="text-xl font-semibold text-text dark:text-dark-text mb-2">Secure & Private</h3>
               <p className="text-sm text-text/70 dark:text-dark-text/70">
                 Your health data is encrypted and kept completely private. HIPAA-compliant security measures.
@@ -119,7 +119,7 @@ export default function Home() {
             to="/upload" 
             className="inline-flex items-center gap-2 rounded-2xl bg-white text-primary px-8 py-4 shadow-lg hover:shadow-xl transition-all font-semibold text-lg"
           >
-            <span>🚀</span>
+            <span></span>
             <span>Start Analysis Now</span>
           </Link>
         </section>

@@ -39,7 +39,7 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 backdrop-blur-md bg-white/80 dark:bg-dark-bg/80 border-b border-accent dark:border-dark-border">
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3 text-text dark:text-dark-text text-xl font-bold hover:opacity-80 transition-opacity">
-          <span className="text-2xl">🧬</span>
+          <span className="text-2xl"></span>
           <span className="text-heading-md">SkinVision AI</span>
         </Link>
         <nav className="flex items-center gap-6">

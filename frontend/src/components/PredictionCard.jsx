@@ -9,7 +9,7 @@ export default function PredictionCard({ disease, confidence }) {
   return (
     <div className="bg-white dark:bg-dark-card rounded-2xl shadow-card border border-accent dark:border-dark-border p-6">
       <div className="flex items-center gap-3 mb-4">
-        <div className="text-3xl">🔬</div>
+        <div className="text-3xl"></div>
         <div>
           <div className="text-text/70 dark:text-dark-text/70 text-sm font-medium">Predicted Disease</div>
           <div className="text-3xl font-bold text-text dark:text-dark-text mt-1">{disease}</div>
