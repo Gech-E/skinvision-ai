@@ -1,26 +1,29 @@
 version: '3.9'
 services:
   backend:
-    build: ./backend
+    build:
+      context: ./backend
     container_name: skinvision-backend
     ports:
-      - "8000:8000"
+      - "5000:5000"
     environment:
       - DATABASE_URL=postgresql+psycopg2://postgres:postgres@db:5432/skinvision
-      - MODEL_PATH=/app/app/ml/model.h5
-      - STATIC_DIR=/app/app/static
-      - JWT_SECRET=devsecret
+      - MODEL_PATH=/app/model/artifacts/model.h5
+      - LABEL_MAP_PATH=/app/model/label_map.json
+      - UPLOAD_DIR=/app/uploads
+      - CORS_ORIGINS=*
     depends_on:
       - db
     volumes:
-      - ./backend/app/static:/app/app/static
+      - ./model:/app/model:ro
+      - ./uploads:/app/uploads
   frontend:
     build: ./frontend
     container_name: skinvision-frontend
     ports:
       - "3000:3000"
     environment:
-      - VITE_API_BASE=http://localhost:8000
+      - VITE_API_BASE=http://localhost:5000
     depends_on:
       - backend
   db:
@@ -36,5 +39,4 @@ services:
       - db_data:/var/lib/postgresql/data
 volumes:
   db_data:
-
 

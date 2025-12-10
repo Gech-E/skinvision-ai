@@ -1,0 +1,160 @@
+openapi: 3.0.3
+info:
+  title: SkinVision AI REST API
+  version: 1.0.0
+  description: >-
+    REST interface for the production-ready skin cancer detection stack. Upload a
+    dermatoscopic image, retrieve probability distributions, and persist results
+    to PostgreSQL.
+servers:
+  - url: http://localhost:5000
+    description: Local development
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: API is running
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  /predict:
+    post:
+      summary: Predict the skin cancer class for an uploaded image
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Dermatoscopic image (JPG/PNG/HEIC)
+      responses:
+        '200':
+          description: Prediction completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PredictResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /save-result:
+    post:
+      summary: Persist a prediction result to PostgreSQL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveResultRequest'
+      responses:
+        '201':
+          description: Result saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PredictionRecord'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /history:
+    get:
+      summary: Retrieve saved prediction results (most recent first)
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 25
+            minimum: 1
+            maximum: 200
+          description: Number of rows to return
+      responses:
+        '200':
+          description: List of saved predictions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PredictionRecord'
+components:
+  responses:
+    BadRequest:
+      description: Invalid input
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+    Probability:
+      type: object
+      properties:
+        label:
+          type: string
+          example: mel
+        score:
+          type: number
+          format: float
+          example: 0.92
+    PredictResponse:
+      type: object
+      properties:
+        predicted_class:
+          type: string
+          example: mel
+        confidence:
+          type: number
+          format: float
+          example: 0.92
+        image_path:
+          type: string
+          example: /app/uploads/20250101_abcdef.jpg
+        probabilities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Probability'
+    SaveResultRequest:
+      type: object
+      required:
+        - predicted_class
+        - confidence
+      properties:
+        predicted_class:
+          type: string
+        confidence:
+          type: number
+        image_path:
+          type: string
+    PredictionRecord:
+      allOf:
+        - $ref: '#/components/schemas/SaveResultRequest'
+        - type: object
+          properties:
+            id:
+              type: integer
+            timestamp:
+              type: string
+              format: date-time
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
