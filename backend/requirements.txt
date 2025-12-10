@@ -1,20 +1,23 @@
-fastapi==0.115.0
-uvicorn[standard]==0.30.3
+flask==3.1.0
+flask-cors==5.0.0
+gunicorn==23.0.0
 sqlalchemy==2.0.36
 psycopg2-binary==2.9.9
+pillow==11.0.0
+numpy==1.26.4
+tensorflow-cpu==2.17.1
+python-dotenv==1.0.1
+
+# Legacy FastAPI stack (still available for compatibility/tests)
+fastapi==0.115.0
+uvicorn[standard]==0.30.3
 pydantic==2.9.2
 python-multipart==0.0.9
-Pillow==10.4.0
-tensorflow==2.16.1
-numpy==1.26.4
 passlib[bcrypt]==1.7.4
 python-jose[cryptography]==3.3.0
 jinja2==3.1.4
-twilio==9.3.1
 
 # Testing
 pytest==8.3.3
 pytest-cov==5.0.0
 httpx==0.27.2
-
-
